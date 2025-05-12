@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ai-calendar-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: firebase-service-account.json
+      - key: https://oftitgyftywcpojqhyue.supabase.co
+        value: https://your-project.supabase.co
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mdGl0Z3lmdHl3Y3BvanFoeXVlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NTIwMzU3NywiZXhwIjoyMDYwNzc5NTc3fQ.HqcE_LuHydMzGI-WJ2FHKiu7A8atCAJLbiaVRKJ2zjo
+        value: your-supabase-service-role-key
