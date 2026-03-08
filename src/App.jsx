@@ -1,157 +1,48 @@
+// ─────────────────────────────────────────────
 // src/App.jsx
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+// App shell (SAFE + MINIMAL)
+// - NO providers
+// - NO auth listeners
+// - NO loading gates
+// - ONLY backend lock + routes
+// Providers live ONLY in RootProviders.jsx
+// ─────────────────────────────────────────────
 
-import CalendarTasks from './CalendarTasks';
-import CalendarView from './components/CalendarView';
-import PredictionComponent from './components/PredictionComponent';
-import ProfileCard from './components/ProfileCard';
-import ProfileTab from './components/ProfileTab';
-import ProfileSection from './components/ProfileSection';
-import FirebaseTokenTool from './components/FirebaseTokenTool';
-import PrivateRoute from './components/PrivateRoute';
-import ThemeToggle from './components/ThemeToggle';
-import Sidebar from './components/Sidebar';
+import { useEffect } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirebaseToken } from '@/lib/auth';
+import AppRoutes from './AppRoutes';
+import { setBackendPort } from './socketPort';
+import ErrorBoundary from './components/ErrorBoundary';
 
-import { useAuth } from './hooks/useAuth';
-import { supabase } from './supabaseClient';
-import { connectSocket } from './socket';
+// ─────────────────────────────────────────────
+// 🔒 Backend hard-lock (LOCAL DEV ONLY)
+// ─────────────────────────────────────────────
+const BACKEND_URL = 'http://127.0.0.1:5000';
 
-import './App.css';
-
-/* ─────────────────────────────
-   Error Boundary
-   ──────────────────────────── */
-class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null };
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error, info) {
-    console.error('❌ ErrorBoundary caught:', error, info);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-4 bg-red-100 text-red-700 rounded">
-          Something went wrong: {this.state.error?.message}
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-ErrorBoundary.propTypes = { children: PropTypes.node.isRequired };
-
-/* ─────────────────────────────
-   Main App
-   ──────────────────────────── */
 export default function App() {
-  const { user } = useAuth(); // { user, loading } if you need loading
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  /* Fetch tasks from Supabase */
-  const fetchUserTasks = async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.uid);
-      if (error) console.error('❌ Supabase fetch error:', error.message);
-      else setTasks(data);
-    } catch (err) {
-      console.error('❌ Unexpected fetch error:', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* WebSocket: reconnect when user changes, listen for task_update */
+  // Side-effect only — NEVER blocks render
   useEffect(() => {
-    const socket = connectSocket(user?.uid); // ← send UID
-    const handleUpdate = () => {
-      console.log('📬 task_update → refreshing tasks');
-      fetchUserTasks();
-    };
-    socket.on('task_update', handleUpdate);
-    return () => socket.off('task_update', handleUpdate);
-  }, [user]);
+    setBackendPort(BACKEND_URL);
+    console.log('🔐 Backend locked to', BACKEND_URL);
+  }, []);
 
-  /* Initial fetch after login */
+  // 🔄 Firebase auth state listener – keep token fresh for Supabase
   useEffect(() => {
-    fetchUserTasks();
-  }, [user]);
+    const auth = getAuth();
 
-  /* ─────────── UI ─────────── */
-  return (
-    <ErrorBoundary>
-      <ThemeToggle />
-      <Toaster position="top-right" />
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        console.log('🔐 Firebase user detected → refreshing token');
+        await getFirebaseToken();
+      } else {
+        console.log('🚪 User signed out');
+      }
+    });
 
-      {/* Layout: sidebar + main content */}
-      <div className="flex min-h-screen">
-        <Sidebar />
+    return () => unsubscribe();
+  }, []);
 
-        <main className="flex-1 p-6">
-          <Routes>
-            {/* 🌐 Public */}
-            <Route path="/profile" element={<ProfileCard />} />
-            <Route path="/predict" element={<PredictionComponent />} />
-
-            {/* 🔐 Protected */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute user={user}>
-                  <CalendarTasks tasks={tasks} loading={loading} fetchTasks={fetchUserTasks} />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/calendar"
-              element={
-                <PrivateRoute user={user}>
-                  <CalendarView />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/profile-section"
-              element={
-                <PrivateRoute user={user}>
-                  <ProfileSection />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/profile-tab"
-              element={
-                <PrivateRoute user={user}>
-                  <ProfileTab />
-                </PrivateRoute>
-              }
-            />
-
-            {/* 🔧 Firebase helper */}
-            <Route path="/get-id-token" element={<FirebaseTokenTool />} />
-
-            {/* 🐞 Debug */}
-            <Route
-              path="/debug"
-              element={
-                <div className="p-4">
-                  <pre>{JSON.stringify(user, null, 2)}</pre>
-                </div>
-              }
-            />
-
-            {/* 🛑 Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </ErrorBoundary>
-  );
+  // ✅ ALWAYS render routes (NO CONDITIONS)
+  return <ErrorBoundary><AppRoutes /></ErrorBoundary>;
 }

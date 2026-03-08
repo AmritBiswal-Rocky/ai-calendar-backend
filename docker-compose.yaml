@@ -1,0 +1,27 @@
+# ─────────────────────────────────────────────
+# 🧠 Perplexica Docker Compose Configuration
+# Exposes both frontend (3000) and API (3001)
+# Uses existing external volumes
+# ─────────────────────────────────────────────
+
+version: '3.8'
+
+services:
+  perplexica:
+    image: itzcrazykns1337/perplexica:latest
+    container_name: perplexica
+    ports:
+      - '3000:3000' # Web UI (Next.js frontend)
+      - '3001:3001' # API endpoint for Deep Research
+    environment:
+      - ENABLE_API=true # ensures API service runs
+    volumes:
+      - perplexica-data:/home/perplexica/data
+      - perplexica-uploads:/home/perplexica/uploads
+    restart: unless-stopped
+
+volumes:
+  perplexica-data:
+    external: true
+  perplexica-uploads:
+    external: true

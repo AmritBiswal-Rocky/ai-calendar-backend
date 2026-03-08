@@ -1,127 +1,263 @@
 // src/components/ProfileTab.jsx
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
-import ProfileCard from './ProfileCard';
+// Firebase → auth only
+// Backend API → database only (Bearer token via getFirebaseToken)
+// NO direct supabase usage
+// ─────────────────────────────────────────────
+
+import React, { useEffect, useState, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Dialog, Transition } from '@headlessui/react';
 import toast from 'react-hot-toast';
 
+import { getFirebaseToken } from '@/lib/auth';
+
+import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
+
+import ProfileCard from './ProfileCard';
+import EditProfileForm from './EditProfileForm';
+
+import GooglePhotosConnect from './GooglePhotosConnect';
+import GooglePhotosList from './GooglePhotosList';
+import GoogleDriveUpload from './GoogleDriveUpload';
+import GoogleDriveList from './GoogleDriveList';
+
+import uploadToDrive from '@/utils/uploadToDrive';
+
 const ProfileTab = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth(); // Firebase user only
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
-  const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({ bio: '', phone: '' });
+  const [showEdit, setShowEdit] = useState(false);
+
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
 
-  // ───────────────────────────────────────── Fetch profile
+  // ─────────────────────────────────────────────
+  // Logout (Firebase ONLY)
+  // ─────────────────────────────────────────────
+  const handleLogout = async () => {
+    try {
+      await firebaseSignOut(auth);
+      toast.success('Logged out');
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      toast.error('Logout failed');
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Fetch profile (via backend API)
+  // ─────────────────────────────────────────────
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
 
-        if (userError || !user) {
-          setErrorMsg('❌ Not authenticated or session expired.');
-          return;
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const token = await getFirebaseToken();
+        if (!token) {
+          throw new Error('Not authenticated');
         }
 
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, avatar_url, joined_at, bio, phone')
-          .eq('id', user.id)
-          .single();
+        const res = await fetch('/api/profile', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        if (error || !data) {
-          setErrorMsg('❌ Could not fetch profile data.');
-        } else {
-          // Fill gaps from Firebase metadata (if any)
-          const fbUser = user.user_metadata || {};
-          const updates = {};
-          if (!data.full_name && fbUser.full_name) updates.full_name = fbUser.full_name;
-          if (!data.avatar_url && fbUser.avatar_url) updates.avatar_url = fbUser.avatar_url;
-          if (Object.keys(updates).length)
-            await supabase.from('profiles').update(updates).eq('id', user.id);
+        if (!res.ok) {
+          throw new Error(`Failed to load profile (status ${res.status})`);
+        }
 
-          setProfile({ ...data, ...updates });
-          setFormData({ bio: data.bio || '', phone: data.phone || '' });
+        const data = await res.json();
 
-          if (data.avatar_url) {
-            const { data: urlData } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(data.avatar_url);
-            setAvatarUrl(urlData?.publicUrl);
-          } else {
-            setAvatarUrl(null);
-          }
+        if (!cancelled) {
+          setProfile(data || null);
+          setAvatarUrl(data?.avatar_url || null);
         }
       } catch (err) {
-        console.error('❌ Unexpected error:', err);
-        setErrorMsg('❌ An unexpected error occurred.');
+        console.error(err);
+        if (!cancelled) setErrorMsg('Failed to load profile');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchProfile();
-  }, []);
+    run();
 
-  // ───────────────────────────────────────── Handlers
-  const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleSave = async () => {
-    if (!profile?.id) return;
-    const { error } = await supabase
-      .from('profiles')
-      .update({ bio: formData.bio, phone: formData.phone })
-      .eq('id', profile.id);
-
-    if (error) toast.error('❌ Failed to update profile');
-    else {
-      toast.success('✅ Profile updated!');
-      setProfile((p) => ({ ...p, bio: formData.bio, phone: formData.phone }));
-      setEditMode(false);
-    }
-  };
-
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !profile?.id) return;
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${profile.id}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) return toast.error('Failed to upload avatar');
-
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: filePath })
-      .eq('id', profile.id);
-
-    if (updateError) toast.error('Failed to update profile');
-    else {
-      toast.success('Avatar updated!');
-      setProfile((p) => ({ ...p, avatar_url: filePath }));
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      setAvatarUrl(urlData?.publicUrl);
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const fallbackAvatar = profile?.full_name
     ? `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}`
     : 'https://ui-avatars.com/api/?name=User';
 
-  // ───────────────────────────────────────── UI
+  // ─────────────────────────────────────────────
+  // Avatar upload (Google Drive → Supabase metadata)
+  // ─────────────────────────────────────────────
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.uid) return;
+
+    try {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Only image files allowed');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image must be under 5MB');
+        return;
+      }
+
+      setIsAvatarUploading(true);
+      const driveData = await uploadToDrive(file);
+      const driveUrl = driveData?.webViewLink || driveData?.webContentLink || driveData?.view_link;
+
+      if (!driveUrl) throw new Error('Missing Drive URL');
+
+      const token = await getFirebaseToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatar_url: driveUrl }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Avatar update failed (status ${res.status})`);
+      }
+
+      setAvatarUrl(driveUrl);
+      setProfile((p) => (p ? { ...p, avatar_url: driveUrl } : p));
+      toast.success('Avatar updated');
+    } catch (err) {
+      console.error(err);
+      toast.error('Avatar update failed');
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarReset = async () => {
+    if (!user?.uid) return;
+
+    try {
+      setIsAvatarUploading(true);
+      const token = await getFirebaseToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatar_url: null }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Avatar reset failed (status ${res.status})`);
+      }
+
+      setAvatarUrl(null);
+      setProfile((p) => (p ? { ...p, avatar_url: null } : p));
+      toast.success('Avatar reset');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to reset avatar');
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Save editable profile fields
+  // ─────────────────────────────────────────────
+  const handleSaveProfile = async () => {
+    if (!profile || !user?.uid) return;
+
+    try {
+      const updates = {
+        full_name: profile.full_name ?? null,
+        bio: profile.bio ?? null,
+        phone: profile.phone ?? null,
+      };
+
+      const token = await getFirebaseToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Profile update failed (status ${res.status})`);
+      }
+
+      toast.success('Profile updated');
+    } catch (err) {
+      console.error(err);
+      toast.error('Profile update failed');
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Google Sign-in (Firebase only)
+  // ─────────────────────────────────────────────
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast.success('Signed in');
+    } catch (err) {
+      console.error(err);
+      toast.error('Google sign-in failed');
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="text-center mt-10">
+        <h2 className="text-xl font-semibold mb-4">You’re not signed in</h2>
+        <button onClick={handleGoogleLogin} className="bg-blue-600 text-white px-4 py-2 rounded">
+          Sign in with Google
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-lg mx-auto mt-10 p-6">
-      <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">
-        Your Profile
-      </h2>
+      <h2 className="text-2xl font-semibold text-center mb-6">Your Profile</h2>
 
       <ProfileCard profile={profile} loading={loading} />
 
@@ -131,106 +267,61 @@ const ProfileTab = () => {
             <img
               src={avatarUrl || fallbackAvatar}
               alt="Avatar"
-              className="w-24 h-24 rounded-full border shadow-md object-cover bg-white"
+              className="w-24 h-24 rounded-full border object-cover"
             />
           </div>
 
           <div className="flex flex-col items-center mt-4">
-            <label htmlFor="avatar-upload" className="cursor-pointer text-blue-600 hover:underline">
+            <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded">
               Change Avatar
+              <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
             </label>
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
-            />
+
+            {avatarUrl && (
+              <button onClick={handleAvatarReset} className="mt-2 text-red-600 text-sm">
+                Reset Avatar
+              </button>
+            )}
+          </div>
+
+          <div className="text-center mt-6 space-x-3">
+            <button
+              onClick={() => setShowEdit(true)}
+              className="bg-green-500 text-white px-4 py-2 rounded"
+            >
+              Edit Profile
+            </button>
+
+            <button
+              onClick={handleSaveProfile}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Save Profile
+            </button>
+
+            <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded">
+              Logout
+            </button>
+          </div>
+
+          <Transition appear show={showEdit} as={Fragment}>
+            <Dialog as="div" className="relative z-10" onClose={() => setShowEdit(false)}>
+              <Dialog.Panel className="bg-white p-6 rounded shadow-xl">
+                <EditProfileForm profile={profile} onClose={() => setShowEdit(false)} />
+              </Dialog.Panel>
+            </Dialog>
+          </Transition>
+
+          <div className="mt-6">
+            <GooglePhotosConnect />
+            <GooglePhotosList />
+            <GoogleDriveUpload />
+            <GoogleDriveList />
           </div>
         </>
       )}
 
-      {!loading && errorMsg && (
-        <p className="text-red-600 dark:text-red-400 text-center mt-4">{errorMsg}</p>
-      )}
-
-      {!loading && profile && (
-        <>
-          {editMode ? (
-            <form className="mt-4 space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Phone
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="bio"
-                  className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div className="flex justify-center gap-4 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditMode(false)}
-                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="text-center text-gray-700 dark:text-gray-300 mt-4 space-y-2">
-              <p>
-                <strong>Joined At:</strong>{' '}
-                {profile.joined_at ? new Date(profile.joined_at).toLocaleDateString() : '—'}
-              </p>
-              <p>
-                <strong>Phone:</strong> {profile.phone || '—'}
-              </p>
-              <p>
-                <strong>Bio:</strong> {profile.bio || '—'}
-              </p>
-
-              <button
-                onClick={() => setEditMode(true)}
-                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-              >
-                ✏️ Edit Profile
-              </button>
-            </div>
-          )}
-        </>
-      )}
+      {!loading && errorMsg && <p className="text-red-600 text-center mt-4">{errorMsg}</p>}
     </div>
   );
 };

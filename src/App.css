@@ -65,3 +65,37 @@
     transform: rotate(360deg);
   }
 }
+
+.typing {
+  font-style: italic;
+  opacity: 0.7;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  50%,
+  100% {
+    opacity: 0.7;
+  }
+  25%,
+  75% {
+    opacity: 1;
+  }
+}
+
+.typing-dots {
+  font-style: italic;
+  opacity: 0.7;
+  animation: fade 1s infinite;
+}
+
+@keyframes fade {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}

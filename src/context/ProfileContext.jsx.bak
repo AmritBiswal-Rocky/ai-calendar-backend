@@ -1,0 +1,173 @@
+// ─────────────────────────────────────────────
+// src/context/TaskContext.jsx
+// ✅ Task Context — Firebase ↔ Supabase real-time sync
+// ✅ Fetches, creates, updates, deletes user tasks
+// ✅ Auto-updates on DB changes (insert/update/delete)
+// ─────────────────────────────────────────────
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import supabase from '@/lib/supabaseClient';
+import { useAuth } from './AuthContext';
+import { toast } from 'react-hot-toast';
+
+const TaskContext = createContext(null);
+
+export const TaskProvider = ({ children }) => {
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // ─────────────────────────────────────────────
+  // 🧩 Fetch tasks for the current user
+  // ─────────────────────────────────────────────
+  const fetchTasks = useCallback(async () => {
+    if (!user?.firebase_uid) {
+      console.warn('⚠️ No Firebase user found — cannot fetch tasks');
+      setTasks([]);
+      return;
+    }
+
+    console.log('Current Firebase user:', user);
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('firebase_uid', user.firebase_uid)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      console.log('✅ Fetched tasks:', data);
+      setTasks(data || []);
+    } catch (err) {
+      console.error('❌ Error fetching tasks:', err.message);
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // ─────────────────────────────────────────────
+  // 🧩 Add a new task
+  // ─────────────────────────────────────────────
+  const addTask = async (title, details = '') => {
+    if (!user?.firebase_uid) return toast.error('Not authenticated');
+
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([
+          {
+            firebase_uid: user.firebase_uid,
+            title,
+            details,
+            completed: false,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      console.log('✅ Added new task:', data);
+      setTasks((prev) => [data, ...prev]);
+      toast.success('Task added');
+    } catch (err) {
+      console.error('❌ Error adding task:', err.message);
+      toast.error('Failed to add task');
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // 🧩 Toggle completion
+  // ─────────────────────────────────────────────
+  const toggleTaskCompletion = async (taskId, completed) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ completed })
+        .eq('id', taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, completed } : task)));
+      toast.success(completed ? 'Task completed' : 'Task unmarked');
+    } catch (err) {
+      console.error('❌ Error toggling task completion:', err.message);
+      toast.error('Failed to update task');
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // 🧩 Delete task
+  // ─────────────────────────────────────────────
+  const deleteTask = async (taskId) => {
+    try {
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+      if (error) throw error;
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      toast.success('Task deleted');
+    } catch (err) {
+      console.error('❌ Error deleting task:', err.message);
+      toast.error('Failed to delete task');
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // 🔄 Real-time updates listener
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.firebase_uid) return;
+
+    fetchTasks();
+
+    const channel = supabase
+      .channel('tasks-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: `firebase_uid=eq.${user.firebase_uid}`,
+        },
+        (payload) => {
+          console.log('🔄 Real-time task change:', payload);
+
+          if (payload.eventType === 'INSERT') {
+            setTasks((prev) => [payload.new, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks((prev) =>
+              prev.map((task) => (task.id === payload.new.id ? payload.new : task))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setTasks((prev) => prev.filter((task) => task.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchTasks]);
+
+  return (
+    <TaskContext.Provider
+      value={{
+        tasks,
+        loading,
+        fetchTasks,
+        addTask,
+        toggleTaskCompletion,
+        deleteTask,
+      }}
+    >
+      {children}
+    </TaskContext.Provider>
+  );
+};
+
+export const useTasks = () => useContext(TaskContext);

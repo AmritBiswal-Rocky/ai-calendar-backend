@@ -1,0 +1,105 @@
+// src/services/profileService.js
+import supabase from '../lib/supabaseClient';
+
+/**
+ * Safely extract firebase_uid from Firebase user
+ */
+function getFirebaseUID(user) {
+  return user?.firebase_uid || user?.uid || null;
+}
+
+/**
+ * Fetch the logged-in user's profile from Supabase
+ * @param {Object} user - Firebase Auth user object
+ * @returns {Promise<Object|null>}
+ */
+export async function fetchProfile(user) {
+  const firebase_uid = getFirebaseUID(user);
+
+  if (!firebase_uid) {
+    console.error('[ProfileService] Missing firebase_uid');
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('firebase_uid', firebase_uid)
+      .maybeSingle(); // ✅ safer than .single()
+
+    if (error) {
+      console.error('[ProfileService] Fetch error:', error);
+      return null;
+    }
+
+    return data ?? null;
+  } catch (err) {
+    console.error('[ProfileService] Unexpected fetch error:', err);
+    return null;
+  }
+}
+
+/**
+ * Create or update a user profile
+ * @param {Object} user - Firebase Auth user object
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<Object|null>}
+ */
+export async function updateProfile(user, updates = {}) {
+  const firebase_uid = getFirebaseUID(user);
+
+  if (!firebase_uid) {
+    console.error('[ProfileService] Missing firebase_uid');
+    return null;
+  }
+
+  try {
+    const now = new Date().toISOString();
+
+    const profileData = {
+      firebase_uid,
+      email: user?.email ?? null,
+      full_name: updates.full_name ?? user?.displayName ?? user?.email?.split('@')[0] ?? 'User',
+      avatar_url: updates.avatar_url ?? user?.photoURL ?? null,
+      updated_at: now,
+      ...updates,
+    };
+
+    const { error } = await supabase.from('profiles').upsert(profileData, {
+      onConflict: 'firebase_uid',
+    });
+
+    if (error) {
+      console.error('[ProfileService] Upsert error:', error);
+      return null;
+    }
+
+    // ✅ Always re-fetch to ensure consistent return value
+    return await fetchProfile({ firebase_uid });
+  } catch (err) {
+    console.error('[ProfileService] Update error:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetch profile if exists, otherwise create it
+ * @param {Object} user - Firebase Auth user object
+ * @returns {Promise<Object|null>}
+ */
+export async function getOrCreateProfile(user) {
+  const firebase_uid = getFirebaseUID(user);
+
+  if (!firebase_uid) {
+    console.error('[ProfileService] Missing firebase_uid');
+    return null;
+  }
+
+  const existingProfile = await fetchProfile({ firebase_uid });
+  if (existingProfile) return existingProfile;
+
+  return await updateProfile(user, {
+    created_at: new Date().toISOString(),
+  });
+}

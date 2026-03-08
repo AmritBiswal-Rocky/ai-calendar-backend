@@ -1,0 +1,193 @@
+# Code Citations
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.on
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () =>
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.src
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.src = reader.result
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.src = reader.result;
+
+        img
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.src = reader.result;
+
+        img.onload =
+```
+
+
+## License: unknown
+https://github.com/shoaib-31/Whiteboard/blob/b63399c56608b8758a17be5e265a003e29a726ac/src/components/Canvas.jsx
+
+```
+.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.src = reader.result;
+
+        img.onload = () =
+```
+

@@ -1,0 +1,39 @@
+{
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "tailwindCSS.includeLanguages": {
+    "javascript": "javascript",
+    "typescript": "typescript",
+    "html": "html",
+    "plaintext": "html",
+    "javascriptreact": "javascript",
+    "typescriptreact": "typescript"
+  },
+  "tailwindCSS.emmetCompletions": true,
+  "editor.colorDecorators": true,
+  "tailwindCSS.colorDecorators": true,
+  "python.analysis.typeCheckingMode": "basic",
+
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript", "javascriptreact"],
+
+  // 👇 Added local JSON schema fallback
+  "json.schemas": [
+    {
+      "fileMatch": ["package.json"],
+      "url": "./.vscode/schemas/package-schema.json"
+    },
+    {
+      "fileMatch": ["semantic-release.json"],
+      "url": "./.vscode/schemas/semantic-release-schema.json"
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+// src/utils/supabaseProfile.js
+import supabase from '@/lib/supabaseClient';
+
+/**
+ * Normalize Firebase user input and extract firebase_uid safely
+ */
+function getFirebaseUID(user) {
+  return user?.firebase_uid || user?.uid || null;
+}
+
+/**
+ * Upsert a user's profile into the Supabase `profiles` table.
+ * Accepts a Firebase Auth user-like object:
+ * { uid | firebase_uid, email, displayName, photoURL }
+ *
+ * @param {Object} user
+ * @returns {Promise<Object|null>}
+ */
+export async function upsertSupabaseProfile(user) {
+  const firebase_uid = getFirebaseUID(user);
+
+  if (!firebase_uid) {
+    console.error('[supabaseProfile] Missing firebase_uid');
+    return null;
+  }
+
+  try {
+    const now = new Date().toISOString();
+
+    const profilePayload = {
+      firebase_uid,
+      email: user?.email ?? null,
+      full_name: user?.displayName ?? user?.email?.split('@')[0] ?? 'User',
+      avatar_url: user?.photoURL ?? null,
+      updated_at: now,
+    };
+
+    const { error } = await supabase.from('profiles').upsert(profilePayload, {
+      onConflict: 'firebase_uid',
+    });
+
+    if (error) {
+      console.error('[supabaseProfile] Upsert error:', error);
+      return null;
+    }
+
+    // ✅ Always re-fetch for consistent return
+    const { data, fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('firebase_uid', firebase_uid)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[supabaseProfile] Fetch after upsert failed:', fetchError);
+      return null;
+    }
+
+    return data ?? null;
+  } catch (err) {
+    console.error('[supabaseProfile] Unexpected error:', err);
+    return null;
+  }
+}

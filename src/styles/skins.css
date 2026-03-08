@@ -1,0 +1,54 @@
+/* Theme variable definitions */
+:root {
+  /* Default (AI Classic Skin) */
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+}
+
+/* Neon Skin */
+[data-skin='neon'] {
+  --background: 222 25% 10%;
+  --foreground: 210 40% 98%;
+  --primary: 290 100% 60%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 170 100% 45%;
+  --accent-foreground: 0 0% 100%;
+}
+
+/* Pastel Skin */
+[data-skin='pastel'] {
+  --background: 210 40% 98%;
+  --foreground: 240 10% 3.9%;
+  --primary: 280 70% 85%;
+  --primary-foreground: 240 10% 3.9%;
+  --accent: 190 60% 85%;
+  --accent-foreground: 240 10% 3.9%;
+}
+
+/* Apply smooth transition to all skins */
+[class^="app-skin-"] {
+  transition: background 0.5s ease, color 0.5s ease;
+}
+
+/* Default */
+.app-skin-default {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* Dark */
+.app-skin-dark {
+  background: #1a1a1a;
+  color: #f5f5f5;
+}
+
+/* Futuristic */
+.app-skin-futuristic {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  color: #00ffcc;
+  font-family: "Orbitron", sans-serif;
+}

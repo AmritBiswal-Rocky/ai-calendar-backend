@@ -1,0 +1,40 @@
+// src/helpers/upsertProfile.js
+import supabase from '../lib/supabaseClient';
+
+/**
+ * Upserts a user profile into Supabase after Firebase login.
+ * @param {import('firebase/auth').User | null} user - Firebase authenticated user
+ */
+export async function upsertProfile(user) {
+  if (!user) return null;
+
+  try {
+    const nowIso = new Date().toISOString();
+    const profile = {
+      id: user.firebase_uid, // Firebase firebase_uid
+      email: user.email || null,
+      name: user.displayName || 'New User',
+      avatar_url: user.photoURL || 'https://via.placeholder.com/150',
+      role: 'user',
+      preferences: {},
+      created_at: nowIso,
+      updated_at: nowIso,
+    };
+
+    // Upsert into 'profiles' table
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(profile, { onConflict: ['id'] })
+      .select();
+
+    if (error) {
+      console.error('Error upserting profile:', error);
+      return null;
+    }
+
+    return Array.isArray(data) ? data[0] : data;
+  } catch (err) {
+    console.error('upsertProfile exception:', err);
+    return null;
+  }
+}

@@ -1,16 +1,231 @@
+/* ─────────────────────────────────────────────
+   src/index.css
+   SAFE + STABLE BASELINE (WHITE-SCREEN PROOF)
+   + DEEMENTUM GLOBAL UI HELPERS
+   ───────────────────────────────────────────── */
+
+/* ❌ TEMPORARILY DISABLED
+   This file caused full UI invisibility (opacity/visibility bugs)
+   Re-enable ONLY after auditing it line-by-line.
+*/
+/* @import './styles/skins.css'; */
+
+/* ─────────────────────────────────────────────
+   Tailwind layers
+   ───────────────────────────────────────────── */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────
+   GLOBAL RESET (ABSOLUTELY SAFE)
+   ───────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
 body {
   margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+  padding: 0;
+
+  width: 100%;
+  min-height: 100vh;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
     'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 🚫 NEVER block rendering */
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background: #ffffff;
+  color: #000000;
+
+  /* 🔒 HARD VISIBILITY GUARANTEE */
+  opacity: 1 !important;
+  visibility: visible !important;
 }
+
+/* ─────────────────────────────────────────────
+   ROOT CONTAINER (CRITICAL)
+   ───────────────────────────────────────────── */
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+
+  display: block;
+
+  position: relative;
+
+  /* 🔒 FORCE VISIBILITY */
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* ─────────────────────────────────────────────
+   CODE FONT
+   ───────────────────────────────────────────── */
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS (LIGHT / DARK)
+   ───────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   TAILWIND BASE BINDINGS (SAFE)
+   ───────────────────────────────────────────── */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   DEEMENTUM: HIDE SCROLLBAR (BUT KEEP SCROLLING)
+   (Use these classes where needed)
+   ───────────────────────────────────────────── */
+
+.deementum-hide-scrollbar {
+  -ms-overflow-style: none; /* IE/old Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.deementum-hide-scrollbar::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+.deementum-hide-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.deementum-hide-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ─────────────────────────────────────────────
+   DEEMENTUM: CALENDAR CELL COLORS (HOVER + TODAY)
+   You can use these classes in Calendar.jsx
+   ───────────────────────────────────────────── */
+
+.deementum-day-cell {
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.deementum-day-cell:hover {
+  background: rgba(186, 230, 253, 0.35); /* light sky hover */
+}
+
+.deementum-day-today {
+  background: rgba(168, 85, 247, 0.35) !important; /* purple for current date */
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.35);
+}
+
+/* ─────────────────────────────────────────────
+   DEEMENTUM: AVATAR MODAL STYLES
+   ───────────────────────────────────────────── */
+
+.avatar-modal-overlay,
+.avatar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.avatar-modal {
+  width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+
+.avatar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* ─────────────────────────────────────────────
+   ⚠️ REMOVED FOREVER (CAUSE WHITE SCREEN)
+   ─────────────────────────────────────────────
+   ❌ opacity: 0
+   ❌ visibility: hidden
+   ❌ display: flex on body/root
+   ❌ overflow: hidden on body/html/root
+   ❌ height: 100% without min-height
+   ❌ scrollbar suppression (global)
+   ───────────────────────────────────────────── */

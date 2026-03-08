@@ -1,37 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from './supabaseClient';
+import supabase from '@/lib/supabaseClient';
+import { ensureAuth } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 
 const Events = () => {
+  const { user } = useAuth();
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
     const fetchEvents = async () => {
-      // Get the current user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      console.log('User data:', user);
-
-      if (!user) {
-        console.log('No user logged in.');
+      if (!user?.firebase_uid) {
+        console.warn('No user authenticated when fetching events');
         return;
       }
 
-      // Query the events table
-      const { data, error } = await supabase.from('events').select('*').eq('user_id', user.id);
+      try {
+        const token = await ensureAuth(user);
+        if (!token) throw new Error('Authentication failed');
 
-      console.log('Fetched events:', data);
-      console.log('Error (if any):', error);
+        // Query the events table
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .eq('user_id', user.firebase_uid);
 
-      if (error) {
-        console.error(error);
-      } else {
-        setEvents(data);
+        console.log('Fetched events:', data);
+        console.log('Error (if any):', error);
+
+        if (error) {
+          console.error('Error fetching events:', error);
+        } else {
+          setEvents(data || []);
+        }
+      } catch (authError) {
+        console.error('Authentication error:', authError);
       }
     };
 
     fetchEvents();
-  }, []);
+  }, [user]);
 
   return (
     <div>

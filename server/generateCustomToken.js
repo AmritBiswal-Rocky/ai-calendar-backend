@@ -7,11 +7,11 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const uid = 'your-user-id-here';
+const firebase_uid = 'your-user-id-here';
 
 admin
   .auth()
-  .createCustomToken(uid)
+  .createCustomToken(firebase_uid)
   .then((customToken) => {
     console.log('✅ Custom Firebase Token:', customToken);
   })

@@ -1,0 +1,30 @@
+import supabase from '@/lib/supabaseClient';
+
+export const fetchUserProfile = async (firebase_uid) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('full_name, joined_at')
+    .eq('firebase_uid', firebase_uid)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateUserProfile = async (firebase_uid, updates) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('firebase_uid', firebase_uid)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};

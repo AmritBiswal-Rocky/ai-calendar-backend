@@ -1,0 +1,348 @@
+/* ─────────────────────────────────────────────
+   src/components/calendar.css
+   DEEMENTUM Calendar Styles (Enhanced)
+   ✅ Today = Purple
+   ✅ Hover date cell = Highlight color
+   ✅ Smooth transitions
+   ✅ Different rows/columns feel via subtle variations
+   ✅ Draft bar INSIDE selected time slot (Week view fix)
+   ───────────────────────────────────────────── */
+
+:root {
+  --calendar-header-gradient: linear-gradient(to right, #ff7e29, #ff3ca6, #8b5cf6);
+  --calendar-bg: #ffffff;
+  --calendar-alt-bg: #f6f3f0;
+  --calendar-border: #e5e5e5;
+  --calendar-text: #3b3b3b;
+  --calendar-heading-text: #2b2b2b;
+
+  /* Today */
+  --calendar-today-bg: #c084fc;
+  --calendar-today-text: #ffffff;
+
+  /* Buttons */
+  --calendar-button-bg: #d8b4fe;
+  --calendar-button-text: #3b3b3b;
+
+  /* Hover + selection feel */
+  --calendar-hover-bg: rgba(59, 130, 246, 0.14);
+  --calendar-hover-border: rgba(59, 130, 246, 0.35);
+
+  /* Subtle column/row variation */
+  --calendar-col-tint: rgba(2, 132, 199, 0.03);
+  --calendar-row-tint: rgba(124, 58, 237, 0.03);
+}
+
+.calendar-container {
+  font-family: 'Inter', sans-serif;
+  background: var(--calendar-bg);
+  color: var(--calendar-text);
+  padding: 10px;
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+}
+
+/* ───────── Header ───────── */
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--calendar-header-gradient);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.calendar-header-left,
+.calendar-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.calendar-date {
+  font-weight: bold;
+}
+
+.calendar-nav-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.calendar-nav-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.calendar-select,
+.calendar-search {
+  padding: 6px 10px;
+  border: 1px solid var(--calendar-border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--calendar-heading-text);
+}
+
+.calendar-search {
+  min-width: 220px;
+}
+
+.calendar-button {
+  background: var(--calendar-button-bg);
+  color: var(--calendar-button-text);
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.calendar-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.calendar-profile {
+  background: white;
+  color: var(--calendar-button-text);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  border: 2px solid var(--calendar-button-bg);
+}
+
+/* ───────── Grid ───────── */
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--calendar-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Day labels row */
+.calendar-day {
+  text-align: center;
+  font-weight: bold;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--calendar-border);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--calendar-heading-text);
+}
+
+/* Date cells */
+.calendar-cell {
+  border: 1px solid var(--calendar-border);
+  min-height: 90px;
+  padding: 6px;
+
+  background: var(--calendar-bg);
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+
+  font-weight: 500;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+/* Alternate cell background */
+.calendar-cell:nth-child(odd) {
+  background: var(--calendar-alt-bg);
+}
+
+/* ─────────────────────────────────────────────
+   Column/Row different color feel
+   (subtle tint overlay so grid looks "alive")
+   NOTE: Works because cells are in a 7-column grid
+   ───────────────────────────────────────────── */
+
+/* Column tint (every 7th pattern) */
+.calendar-cell:nth-child(7n + 1) {
+  box-shadow: inset 0 0 0 999px var(--calendar-col-tint);
+}
+.calendar-cell:nth-child(7n + 2) {
+  box-shadow: inset 0 0 0 999px rgba(2, 132, 199, 0.02);
+}
+.calendar-cell:nth-child(7n + 3) {
+  box-shadow: inset 0 0 0 999px rgba(2, 132, 199, 0.025);
+}
+.calendar-cell:nth-child(7n + 4) {
+  box-shadow: inset 0 0 0 999px rgba(2, 132, 199, 0.03);
+}
+.calendar-cell:nth-child(7n + 5) {
+  box-shadow: inset 0 0 0 999px rgba(2, 132, 199, 0.025);
+}
+.calendar-cell:nth-child(7n + 6) {
+  box-shadow: inset 0 0 0 999px rgba(2, 132, 199, 0.02);
+}
+.calendar-cell:nth-child(7n + 7) {
+  box-shadow: inset 0 0 0 999px rgba(2, 132, 199, 0.03);
+}
+
+/* Row tint (every week block of 7 cells) */
+.calendar-cell:nth-child(n + 1):nth-child(-n + 7) {
+  background-image: linear-gradient(var(--calendar-row-tint), var(--calendar-row-tint));
+}
+.calendar-cell:nth-child(n + 8):nth-child(-n + 14) {
+  background-image: linear-gradient(rgba(124, 58, 237, 0.02), rgba(124, 58, 237, 0.02));
+}
+.calendar-cell:nth-child(n + 15):nth-child(-n + 21) {
+  background-image: linear-gradient(rgba(124, 58, 237, 0.03), rgba(124, 58, 237, 0.03));
+}
+.calendar-cell:nth-child(n + 22):nth-child(-n + 28) {
+  background-image: linear-gradient(rgba(124, 58, 237, 0.02), rgba(124, 58, 237, 0.02));
+}
+.calendar-cell:nth-child(n + 29):nth-child(-n + 35) {
+  background-image: linear-gradient(rgba(124, 58, 237, 0.03), rgba(124, 58, 237, 0.03));
+}
+.calendar-cell:nth-child(n + 36):nth-child(-n + 42) {
+  background-image: linear-gradient(rgba(124, 58, 237, 0.02), rgba(124, 58, 237, 0.02));
+}
+
+/* Hover highlight */
+.calendar-cell:hover {
+  background: var(--calendar-hover-bg);
+  border-color: var(--calendar-hover-border);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Today highlight (ALWAYS purple) */
+.calendar-cell.today {
+  background: var(--calendar-today-bg) !important;
+  color: var(--calendar-today-text);
+  font-weight: 700;
+  border-radius: 4px;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+/* Empty cells */
+.calendar-cell.empty {
+  background: rgba(255, 255, 255, 0.35);
+  cursor: default;
+}
+
+.calendar-cell.empty:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--calendar-border);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ─────────────────────────────────────────────
+   WEEK VIEW DRAFT SLOT FIX (React Big Calendar)
+   Goal:
+   ✅ When user clicks a time slot (ex: 12:00 AM on Sun),
+      the blue draft bar should appear INSIDE that slot cell.
+   This CSS supports the JSX fix where we render draft inside
+   timeSlotWrapper.
+   ───────────────────────────────────────────── */
+
+/* Make each slot act like a container for absolute children */
+.rbc-time-slot {
+  position: relative;
+}
+
+/* Draft bar inside slot */
+.calendar-draft-slot {
+  position: absolute;
+  inset: 2px; /* keeps it inside the slot boundaries */
+  border-radius: 12px;
+  background: #3b82f6;
+  color: #ffffff;
+  padding: 10px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+/* Draft title */
+.calendar-draft-slot .draft-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* Draft time label */
+.calendar-draft-slot .draft-time {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+/* Draft action chips */
+.calendar-draft-slot .draft-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Chips inside draft */
+.calendar-draft-slot .draft-chip {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Hover feel on chips */
+.calendar-draft-slot .draft-chip:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ───────── Responsive ───────── */
+
+@media (max-width: 768px) {
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-header-left,
+  .calendar-header-right {
+    justify-content: space-between;
+  }
+
+  .calendar-search {
+    flex: 1;
+  }
+
+  .calendar-grid {
+    font-size: 0.9rem;
+  }
+
+  .calendar-cell {
+    min-height: 76px;
+  }
+}

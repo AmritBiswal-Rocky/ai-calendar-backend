@@ -1,9 +1,10 @@
 // src/Tasks.js
 
 import React, { useState, useEffect } from 'react';
-import { supabase, setSupabaseSession } from './supabaseClient';
+import { useAuth } from '@/context/AuthContext';
 
 function Tasks() {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
   const [date, setDate] = useState('');
@@ -12,57 +13,104 @@ function Tasks() {
   // 🔄 Load tasks on component mount
   useEffect(() => {
     const loadTasks = async () => {
-      setLoading(true);
-      await setSupabaseSession(); // ✅ Ensure Supabase uses Firebase token
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('date', { ascending: true });
-
-      if (error) {
-        console.error('❌ Error fetching tasks:', error.message);
-      } else {
-        setTasks(data);
+      if (!user?.firebase_uid) {
+        console.warn('No user authenticated when loading tasks');
+        return;
       }
-      setLoading(false);
+
+      setLoading(true);
+      try {
+        const token = await ensureAuth(user);
+        if (!token) throw new Error('Authentication failed');
+
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('user_id', user.firebase_uid)
+          .order('date', { ascending: true });
+
+        if (error) {
+          console.error('❌ Error fetching tasks:', error.message);
+        } else {
+          setTasks(data || []);
+        }
+      } catch (error) {
+        console.error('❌ Authentication error:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadTasks();
-  }, []);
+  }, [user]);
 
   // ➕ Add a new task
   const handleAddTask = async () => {
     if (!newTask || !date) return;
+    if (!user?.firebase_uid) {
+      console.error('No user authenticated when adding task');
+      return;
+    }
 
     setLoading(true);
-    const { data, error } = await supabase.from('tasks').insert([
-      {
-        description: newTask,
-        date: new Date(date),
-      },
-    ]);
+    try {
+      const token = await ensureAuth(user);
+      if (!token) throw new Error('Authentication failed');
 
-    if (error) {
-      console.error('❌ Error adding task:', error.message);
-    } else {
-      setTasks([...tasks, ...data]);
-      setNewTask('');
-      setDate('');
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([
+          {
+            description: newTask,
+            date: new Date(date),
+            user_id: user.firebase_uid,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error adding task:', error.message);
+      } else if (data) {
+        setTasks([...tasks, data]);
+        setNewTask('');
+        setDate('');
+      }
+    } catch (error) {
+      console.error('❌ Authentication error:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // ❌ Delete a task
   const handleDeleteTask = async (id) => {
-    setLoading(true);
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
-
-    if (error) {
-      console.error('❌ Error deleting task:', error.message);
-    } else {
-      setTasks(tasks.filter((task) => task.id !== id));
+    if (!user?.firebase_uid) {
+      console.error('No user authenticated when deleting task');
+      return;
     }
-    setLoading(false);
+
+    setLoading(true);
+    try {
+      const token = await ensureAuth(user);
+      if (!token) throw new Error('Authentication failed');
+
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.firebase_uid);
+
+      if (error) {
+        console.error('❌ Error deleting task:', error.message);
+      } else {
+        setTasks(tasks.filter((task) => task.id !== id));
+      }
+    } catch (error) {
+      console.error('❌ Authentication error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

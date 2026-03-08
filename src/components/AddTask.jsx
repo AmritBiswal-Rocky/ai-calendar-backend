@@ -1,11 +1,14 @@
 // src/components/AddTask.jsx
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient'; // ✅ Supabase client
-import { useAuth } from '../hooks/useAuth'; // ✅ Auth hook
+import { ensureAuth } from '@/lib/auth';
 import toast from 'react-hot-toast';
+import { useSocket } from '../context/SocketContext'; // ✅ fixed path
+import { useAuth } from '@/context/AuthContext';
+import supabase from '@/lib/supabaseClient';
 
 const AddTask = ({ fetchTasks }) => {
   const { user } = useAuth();
+  const { emit } = useSocket() || {}; // ✅ safe destructuring
 
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
@@ -19,30 +22,53 @@ const AddTask = ({ fetchTasks }) => {
       toast.error('❗ Description and Date are required');
       return;
     }
-    if (!user?.uid) {
+
+    if (!user?.firebase_uid) {
       toast.error('⚠️ You must be logged in to add a task');
       return;
     }
 
     try {
-      const { error } = await supabase
+      const token = await ensureAuth(user);
+      if (!token) throw new Error('Authentication failed');
+
+      const { data, error } = await supabase
         .from('tasks')
-        .insert([{ user_id: user.uid, description, date, priority, tag }]);
+        .insert([
+          {
+            firebase_uid: user.firebase_uid,
+            description,
+            date,
+            priority: priority || null,
+            tag: tag || null,
+          },
+        ])
+        .select()
+        .single();
 
       if (error) {
         toast.error('❌ Failed to add task');
         console.error('Insert error:', error.message);
       } else {
         toast.success('✅ Task added!');
+
+        // ⏱️ Emit WebSocket event to server
+        if (emit && data) {
+          emit('task_created', { task: data });
+        }
+
+        // Reset form
         setDescription('');
         setDate('');
         setPriority('');
         setTag('');
-        fetchTasks(); // 🔄 Refresh list
+
+        // Refetch local state (optional if using context)
+        fetchTasks?.();
       }
     } catch (err) {
       toast.error('⚠️ Something went wrong');
-      console.error('Error inserting task:', err);
+      console.error('Unexpected error inserting task:', err);
     }
   };
 

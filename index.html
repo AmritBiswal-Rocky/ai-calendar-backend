@@ -2,19 +2,38 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
+
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="AI Calendar App built with React and Vite" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- App identity -->
+    <title>DEEMENTUM</title>
+    <meta
+      name="description"
+      content="DEEMENTUM – Smart productivity, calendar, and notes app built with React and Vite"
+    />
+
+    <!-- Icons (SAFE: missing files do NOT block render) -->
+    <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>AI Calendar</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
 
-    <!-- Vite loads the entry JavaScript module -->
+    <!-- 🚫 IMPORTANT -->
+    <!-- 🚫 DO NOT load Google APIs, Firebase, GIS, or gapi here -->
+    <!-- 🚫 They MUST be lazy-loaded inside JS files -->
+  </head>
+
+  <body style="margin: 0; padding: 0; width: 100%; min-height: 100vh; background: white">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+
+    <!-- 🚨 CRITICAL: React mount point (MUST exist) -->
+    <div
+      id="root"
+      style="width: 100%; min-height: 100vh; display: block; opacity: 1; visibility: visible"
+    ></div>
+
+    <!-- 🚨 CRITICAL: Vite entry (ABSOLUTE PATH REQUIRED) -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

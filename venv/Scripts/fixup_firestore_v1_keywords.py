@@ -1,4 +1,4 @@
-#!c:\users\kiit01\downloads\ai-calendar\venv\scripts\python.exe
+#!C:\Users\KIIT01\Downloads\deementum\venv\Scripts\python.exe
 # -*- coding: utf-8 -*-
 # Copyright 2025 Google LLC
 #
