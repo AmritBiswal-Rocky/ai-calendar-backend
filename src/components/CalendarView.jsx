@@ -599,11 +599,9 @@ export default function CalendarView() {
       ...draftEvent,
       id: Date.now(),
       title: "New Work",
-      isDraft: false,
-      isSaved: true,
     };
 
-    setEvents((prev) => [...prev, newEvent]);
+    setEvents([...events, newEvent]);
     setDraftEvent(null);
     setShowCreatePopup(false);
   };
@@ -807,7 +805,10 @@ export default function CalendarView() {
 
       {showCreateEventModal && (
         <CreateEventModal
+          start={draftEvent?.start}
+          end={draftEvent?.end}
           onClose={() => setShowCreateEventModal(false)}
+          onSave={handleCreateEvent}
         />
       )}
 

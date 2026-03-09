@@ -1,6 +1,37 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
-export default function CreateEventModal({ onClose }) {
+export default function CreateEventModal({ onClose, start, end, onSave }) {
+
+  const [title, setTitle] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [category, setCategory] = useState("General");
+  const [alarmTime, setAlarmTime] = useState("");
+  const [alarms, setAlarms] = useState([]);
+
+  useEffect(() => {
+    if (start) setStartTime(start);
+    if (end) setEndTime(end);
+  }, [start, end]);
+
+  const addAlarm = () => {
+    if (!alarmTime) return;
+    setAlarms([...alarms, alarmTime]);
+    setAlarmTime("");
+  };
+
+  const handleSave = () => {
+    const event = {
+      title,
+      start: startTime,
+      end: endTime,
+      category,
+      alarms
+    };
+
+    onSave(event);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -26,6 +57,8 @@ export default function CreateEventModal({ onClose }) {
           <input
             type="text"
             placeholder="Event title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="w-full border rounded-lg px-3 py-2"
           />
         </div>
@@ -36,6 +69,8 @@ export default function CreateEventModal({ onClose }) {
 
           <input
             type="datetime-local"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
             className="w-full border rounded-lg px-3 py-2"
           />
         </div>
@@ -46,6 +81,8 @@ export default function CreateEventModal({ onClose }) {
 
           <input
             type="datetime-local"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
             className="w-full border rounded-lg px-3 py-2"
           />
         </div>
@@ -54,10 +91,16 @@ export default function CreateEventModal({ onClose }) {
         <div className="mb-4">
           <label className="block text-sm mb-1">Category</label>
 
-          <select className="w-full border rounded-lg px-3 py-2">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2"
+          >
             <option>General</option>
             <option>Work</option>
             <option>Personal</option>
+            <option>Meeting</option>
+            <option>Reminder</option>
           </select>
         </div>
 
@@ -65,9 +108,57 @@ export default function CreateEventModal({ onClose }) {
         <div className="mb-6">
           <label className="block text-sm mb-1">Attachments</label>
 
-          <button className="border rounded-lg px-4 py-2">
+          <button className="border rounded-lg px-4 py-2 hover:bg-gray-100">
             Upload Files
           </button>
+        </div>
+
+        {/* Timeline */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Timeline</h3>
+
+          <p className="text-sm text-gray-500">
+            No events yet
+          </p>
+        </div>
+
+        {/* Alarm / Reminder */}
+        <div className="mb-6">
+
+          <h3 className="text-lg font-semibold mb-2">
+            Alarm / Reminder
+          </h3>
+
+          <div className="flex items-center gap-3 mb-2">
+
+            <input
+              type="time"
+              value={alarmTime}
+              onChange={(e) => setAlarmTime(e.target.value)}
+              className="border rounded-lg px-3 py-2"
+            />
+
+            <button
+              onClick={addAlarm}
+              className="bg-black text-white px-4 py-2 rounded-lg"
+            >
+              Add
+            </button>
+
+          </div>
+
+          {alarms.length === 0 && (
+            <p className="text-sm text-gray-500">
+              No alarms set
+            </p>
+          )}
+
+          {alarms.map((a, i) => (
+            <div key={i} className="text-sm text-gray-700">
+              ⏰ {a}
+            </div>
+          ))}
+
         </div>
 
         {/* Buttons */}
@@ -81,6 +172,7 @@ export default function CreateEventModal({ onClose }) {
           </button>
 
           <button
+            onClick={handleSave}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg"
           >
             Save
